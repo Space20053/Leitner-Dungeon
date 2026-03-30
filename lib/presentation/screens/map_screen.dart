@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/word_provider.dart';
+import '../../data/repositories/stats_repository.dart';
 
 class MapScreen extends ConsumerWidget {
   const MapScreen({super.key});
@@ -9,6 +10,7 @@ class MapScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final wordsAsync = ref.watch(wordListProvider);
+    final statsAsync = ref.watch(statsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -36,7 +38,18 @@ class MapScreen extends ConsumerWidget {
                 'Підземелля слів',
                 style: TextStyle(fontSize: 24, color: Color(0xFFD4A853)),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
+
+              // Панель загальної статистики
+              statsAsync.when(
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+                data: (stats) => stats.totalBattles == 0
+                    ? const SizedBox.shrink()
+                    : _StatsPanel(stats: stats),
+              ),
+
+              const SizedBox(height: 16),
               Expanded(
                 child: ListView.builder(
                   itemCount: 5,
@@ -69,6 +82,88 @@ class MapScreen extends ConsumerWidget {
   }
 }
 
+class _StatsPanel extends StatelessWidget {
+  final GameStats stats;
+  const _StatsPanel({required this.stats});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1209),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+              color: const Color(0xFFD4A853).withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          children: [
+            const Text(
+              '📜 Статистика пригоди',
+              style: TextStyle(
+                  color: Color(0xFFD4A853),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _StatChip(
+                  label: 'Боїв',
+                  value: '${stats.totalBattles}',
+                  color: Colors.white70,
+                ),
+                _StatChip(
+                  label: 'Перемог',
+                  value: '${stats.wins}',
+                  color: Colors.greenAccent,
+                ),
+                _StatChip(
+                  label: 'Поразок',
+                  value: '${stats.losses}',
+                  color: Colors.redAccent,
+                ),
+                _StatChip(
+                  label: 'Точність',
+                  value: '${stats.accuracy.round()}%',
+                  color: const Color(0xFFD4A853),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatChip extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _StatChip(
+      {required this.label, required this.value, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(value,
+            style: TextStyle(
+                color: color, fontSize: 20, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 2),
+        Text(label,
+            style: const TextStyle(color: Colors.white38, fontSize: 11)),
+      ],
+    );
+  }
+}
+
 class _FloorTile extends StatelessWidget {
   final int floor;
   final int wordCount;
@@ -90,17 +185,15 @@ class _FloorTile extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border.all(
-            color: colors[floor - 1].withValues(alpha: 0.5)),
+        border:
+            Border.all(color: colors[floor - 1].withValues(alpha: 0.5)),
         borderRadius: BorderRadius.circular(12),
         color: colors[floor - 1].withValues(alpha: 0.1),
       ),
       child: Row(
         children: [
-          Text(
-            'Поверх $floor',
-            style: TextStyle(color: colors[floor - 1], fontSize: 16),
-          ),
+          Text('Поверх $floor',
+              style: TextStyle(color: colors[floor - 1], fontSize: 16)),
           const SizedBox(width: 12),
           Text(labels[floor - 1],
               style: const TextStyle(color: Colors.white54, fontSize: 13)),
@@ -131,13 +224,12 @@ class _SessionButton extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color(0xFFD4A853),
         minimumSize: const Size(double.infinity, 52),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       onPressed: () => context.go('/battle/10'),
-      child: const Text(
-        'Почати бій',
-        style: TextStyle(fontSize: 18, color: Colors.black),
-      ),
+      child: const Text('Почати бій',
+          style: TextStyle(fontSize: 18, color: Colors.black)),
     );
   }
 }

@@ -320,6 +320,7 @@ Widget _buildResultScreen() {
                 ),
                 onPressed: () {
                   ref.invalidate(wordListProvider);
+                  ref.invalidate(statsProvider);
                   context.go('/');
                 },
                 child: const Text('Повернутись на карту',
