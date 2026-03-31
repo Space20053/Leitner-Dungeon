@@ -111,24 +111,27 @@ class BattleService {
 
   // Гравець відповів на картку з руки
   // Повертає true якщо правильно
-  bool answer(BattleSession session, int handIndex, String chosen) {
+  (bool, WordCard?) answer(BattleSession session, int handIndex, String chosen) {
     final card = session.hand[handIndex];
     final correct = chosen == card.translation;
 
-    if (correct) {
-  session.correctAnswers++; // додай цей рядок
-  final damage = card.box * 5 + 5;
-  session.enemy.hp -= damage;
-  session.score += card.box * 10;
-  _leitner.promote(card);
-   } else {
-  session.wrongAnswers++; // додай цей рядок
-  session.playerHp -= session.enemy.attackDamage;
-  _leitner.demote(card);
-   }
+    WordCard? cardToSave;
 
-    // Замінюємо використану картку новою — рука завжди 4
+    if (correct) {
+      session.correctAnswers++;
+      final damage = card.box * 5 + 5;
+      session.enemy.hp -= damage;
+      session.score += card.box * 10;
+      _leitner.promote(card);
+      cardToSave = card;
+    } else {
+      session.wrongAnswers++;
+      session.playerHp -= session.enemy.attackDamage;
+      _leitner.demote(card);
+      cardToSave = card;
+    }
+
     session.replaceCard(handIndex);
-    return correct;
+    return (correct, cardToSave);
   }
 }

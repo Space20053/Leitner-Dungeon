@@ -1,8 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../data/models/word_card.dart';
 import '../providers/word_provider.dart';
+
+// ── Спільні стилі ────────────────────────────────────────────────────────────
+const _bg       = Color(0xFF0D0905);
+const _bgPanel  = Color(0xFF130C05);
+const _gold     = Color(0xFFD4A853);
+const _goldDark = Color(0xFF7A5520);
+const _border   = Color(0xFF5C3A1E);
+const _muted    = Color(0xFF4A3320);
+
+TextStyle _pixel(double size, Color color, {double? height}) =>
+    GoogleFonts.pressStart2p(fontSize: size * 2.5, color: color, height: height);
+
+const _colors = [
+  Color(0xFF9E9E9E),
+  Color(0xFF4CAF50),
+  Color(0xFF2196F3),
+  Color(0xFF9C27B0),
+  Color(0xFFFFD700),
+];
 
 class AddWordScreen extends ConsumerStatefulWidget {
   const AddWordScreen({super.key});
@@ -39,8 +59,14 @@ class _AddWordScreenState extends ConsumerState<AddWordScreen> {
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('"$word" додано до підземелля!'),
-          backgroundColor: const Color(0xFF4CAF50),
+          content: Text('"$word" ДОДАНО!', style: _pixel(8, const Color(0xFF1A0D00))),
+          backgroundColor: _gold,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: const BorderSide(color: _goldDark, width: 2),
+          ),
         ),
       );
     }
@@ -54,21 +80,20 @@ class _AddWordScreenState extends ConsumerState<AddWordScreen> {
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1209),
-        title: const Text('Редагувати слово',
-            style: TextStyle(color: Color(0xFFD4A853))),
+        backgroundColor: _bgPanel,
+        title: Text('РЕДАГУВАТИ', style: _pixel(8, _gold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: wordCtrl,
-              style: const TextStyle(color: Colors.white),
-              decoration: _inputDecoration('Слово англійською'),
+              style: _pixel(7, Colors.white),
+              decoration: _inputDecoration('Слово'),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: transCtrl,
-              style: const TextStyle(color: Colors.white),
+              style: _pixel(7, Colors.white),
               decoration: _inputDecoration('Переклад'),
             ),
           ],
@@ -76,8 +101,7 @@ class _AddWordScreenState extends ConsumerState<AddWordScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Скасувати',
-                style: TextStyle(color: Colors.white54)),
+            child: Text('Скасувати', style: _pixel(6, _muted)),
           ),
           TextButton(
             onPressed: () async {
@@ -92,8 +116,7 @@ class _AddWordScreenState extends ConsumerState<AddWordScreen> {
               ref.invalidate(wordListProvider);
               if (ctx.mounted) Navigator.pop(ctx);
             },
-            child: const Text('Зберегти',
-                style: TextStyle(color: Color(0xFFD4A853))),
+            child: Text('Зберегти', style: _pixel(6, _gold)),
           ),
         ],
       ),
@@ -108,116 +131,162 @@ class _AddWordScreenState extends ConsumerState<AddWordScreen> {
     final wordsAsync = ref.watch(wordListProvider);
 
     return Scaffold(
+      backgroundColor: _bg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0D0D1A),
-        title: const Text('Додати слово'),
+        backgroundColor: _bg,
+        elevation: 0,
+        title: Text('ДОДАТИ СЛОВО', style: _pixel(10, _gold)),
+        centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, color: _gold, size: 28),
           onPressed: () => context.go('/'),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Нове слово',
-              style: TextStyle(color: Color(0xFFD4A853), fontSize: 20),
-            ),
-            const SizedBox(height: 24),
-            TextField(
-              controller: _wordController,
-              style: const TextStyle(color: Colors.white, fontSize: 18),
-              decoration: _inputDecoration('Слово англійською'),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _translationController,
-              style: const TextStyle(color: Colors.white, fontSize: 18),
-              decoration: _inputDecoration('Переклад українською'),
-              onSubmitted: (_) => _save(),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFD4A853),
-                minimumSize: const Size(double.infinity, 52),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: _saving ? null : _save,
-              child: _saving
-                  ? const CircularProgressIndicator(color: Colors.black)
-                  : const Text('Додати до підземелля',
-                      style: TextStyle(fontSize: 18, color: Colors.black)),
-            ),
-            const SizedBox(height: 32),
-            const Divider(color: Colors.white24),
-            const SizedBox(height: 16),
-            const Text('Всі слова:',
-                style: TextStyle(color: Colors.white54, fontSize: 14)),
-            const SizedBox(height: 8),
-            Expanded(
-              child: wordsAsync.when(
-                loading: () =>
-                    const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Text('Помилка: $e'),
-                data: (words) => ListView.builder(
-                  itemCount: words.length,
-                  itemBuilder: (context, i) {
-                    final w = words[i];
-                    return ListTile(
-                      title: Text(w.word,
-                          style: const TextStyle(color: Colors.white)),
-                      subtitle: Text(w.translation,
-                          style: const TextStyle(color: Colors.white54)),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'П${w.box}',
-                            style: const TextStyle(
-                                color: Color(0xFFD4A853), fontSize: 12),
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline,
-                                color: Colors.redAccent, size: 20),
-                            onPressed: () async {
-                              final repo = ref.read(wordRepositoryProvider);
-                              await repo.deleteWord(w.id!);
-                              ref.invalidate(wordListProvider);
-                            },
-                          ),
-                        ],
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Нове слово', style: _pixel(10, _gold)),
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: _wordController,
+                    style: _pixel(8, Colors.white),
+                    decoration: _inputDecoration('Слово англійською'),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _translationController,
+                    style: _pixel(8, Colors.white),
+                    decoration: _inputDecoration('Переклад українською'),
+                    onSubmitted: (_) => _save(),
+                  ),
+                  const SizedBox(height: 24),
+                  _SaveButton(
+                    saving: _saving,
+                    onPressed: _saving ? null : _save,
+                  ),
+                  const SizedBox(height: 32),
+                  Divider(color: _muted),
+                  const SizedBox(height: 16),
+                  Text('Всі слова:', style: _pixel(8, _muted)),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: wordsAsync.when(
+                      loading: () => Center(child: CircularProgressIndicator(color: _gold)),
+                      error: (e, _) => Text('Помилка: $e', style: _pixel(8, Colors.redAccent)),
+                      data: (words) => _WordList(
+                        words: words,
+                        onEdit: (w) => _showEditDialog(context, ref, w),
                       ),
-                      onTap: () => _showEditDialog(context, ref, w),
-                    );
-                  },
-                ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
   }
+}
 
-  InputDecoration _inputDecoration(String hint) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(color: Colors.white38),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFD4A853), width: 1),
+// ── Кнопка збереження ───────────────────────────────────────────────────────
+class _SaveButton extends StatelessWidget {
+  final bool saving;
+  final VoidCallback? onPressed;
+
+  const _SaveButton({required this.saving, this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: _gold,
+          border: Border.all(color: _goldDark, width: 3),
+          boxShadow: saving ? null : const [BoxShadow(color: Color(0xFF3D2A10), offset: Offset(4, 4))],
+        ),
+        child: Center(
+          child: saving
+              ? const CircularProgressIndicator(color: Color(0xFF1A0D00))
+              : Text('ДОДАТИ ДО ПІДЗЕМЕЛЛЯ', style: _pixel(8, const Color(0xFF1A0D00))),
+        ),
       ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFD4A853), width: 2),
-      ),
-      filled: true,
-      fillColor: const Color(0xFF2A1F0E),
     );
   }
+}
+
+// ── Список слів ──────────────────────────────────────────────────────────────
+class _WordList extends ConsumerWidget {
+  final List<WordCard> words;
+  final Function(WordCard) onEdit;
+
+  const _WordList({required this.words, required this.onEdit});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListView.builder(
+      itemCount: words.length,
+      itemBuilder: (context, i) {
+        final w = words[i];
+        final color = _colors[w.box - 1];
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: _bgPanel,
+            border: Border.all(color: color.withValues(alpha: 0.5), width: 2),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(w.word, style: _pixel(8, color)),
+                    Text(w.translation, style: _pixel(6, _muted)),
+                  ],
+                ),
+              ),
+              Text('П${w.box}', style: _pixel(7, _gold)),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () async {
+                  final repo = ref.read(wordRepositoryProvider);
+                  await repo.deleteWord(w.id!);
+                  ref.invalidate(wordListProvider);
+                },
+                child: Icon(Icons.delete_outline, color: Colors.redAccent, size: 24),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+InputDecoration _inputDecoration(String hint) {
+  return InputDecoration(
+    hintText: hint,
+    hintStyle: const TextStyle(color: Colors.white38),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: _gold, width: 1),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: _gold, width: 2),
+    ),
+    filled: true,
+    fillColor: _bgPanel,
+  );
 }
