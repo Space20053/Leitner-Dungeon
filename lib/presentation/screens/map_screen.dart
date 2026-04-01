@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/word_provider.dart';
 import '../../data/repositories/stats_repository.dart';
+import '../widgets/animations.dart';
 
 // ── Спільні стилі ────────────────────────────────────────────────────────────
 const _bg       = Color(0xFF0D0905);
@@ -293,34 +294,38 @@ class _FloorTile extends StatelessWidget {
     final label = _labels[floor - 1];
     final icon  = _icons[floor - 1];
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: _bgPanel,
-        border: Border(
-          left:   BorderSide(color: color, width: 4),
-          top:    BorderSide(color: _border, width: 1),
-          right:  BorderSide(color: _border, width: 1),
-          bottom: BorderSide(color: _border, width: 1),
-        ),
-        boxShadow: [
-          BoxShadow(color: color.withValues(alpha: 0.15), offset: const Offset(2, 2)),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        child: Row(
-          children: [
-            Text(icon, style: const TextStyle(fontSize: 14)),
-            const SizedBox(width: 10),
-            Text('П$floor', style: _pixel(9, color)),
-            const SizedBox(width: 10),
-            Text(label, style: _pixel(7, _muted)),
-            const Spacer(),
-            Text('$wordCount', style: _pixel(9, color)),
-            const SizedBox(width: 4),
-            Text('сл.', style: _pixel(6, _muted)),
+    return SlideInCard(
+      index: floor - 1,
+      beginOffset: const Offset(0, 0.3),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: _bgPanel,
+          border: Border(
+            left:   BorderSide(color: color, width: 4),
+            top:    BorderSide(color: _border, width: 1),
+            right:  BorderSide(color: _border, width: 1),
+            bottom: BorderSide(color: _border, width: 1),
+          ),
+          boxShadow: [
+            BoxShadow(color: color.withValues(alpha: 0.15), offset: const Offset(2, 2)),
           ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: Row(
+            children: [
+              Text(icon, style: const TextStyle(fontSize: 14)),
+              const SizedBox(width: 10),
+              Text('П$floor', style: _pixel(9, color)),
+              const SizedBox(width: 10),
+              Text(label, style: _pixel(7, _muted)),
+              const Spacer(),
+              Text('$wordCount', style: _pixel(9, color)),
+              const SizedBox(width: 4),
+              Text('сл.', style: _pixel(6, _muted)),
+            ],
+          ),
         ),
       ),
     );
@@ -372,29 +377,20 @@ class _FightButton extends StatefulWidget {
 }
 
 class _FightButtonState extends State<_FightButton> {
-  bool _pressed = false;
-
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp:   (_) { setState(() => _pressed = false); widget.onTap(); },
-      onTapCancel: () => setState(() => _pressed = false),
+    return PressableButton(
+      onPressed: widget.onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 80),
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 14),
-        transform: _pressed
-            ? Matrix4.translationValues(2, 2, 0)
-            : Matrix4.identity(),
         decoration: BoxDecoration(
           color: _gold,
           border: Border.all(color: _goldDark, width: 3),
-          boxShadow: _pressed
-              ? const []
-              : const [
-                  BoxShadow(color: Color(0xFF3D2A10), offset: Offset(4, 4)),
-                ],
+          boxShadow: const [
+            BoxShadow(color: Color(0xFF3D2A10), offset: Offset(4, 4)),
+          ],
         ),
         child: Text(
           '⚔  ПОЧАТИ БІЙ  ⚔',

@@ -6,6 +6,7 @@ import '../../domain/services/battle_service.dart';
 import '../providers/word_provider.dart';
 import '../../data/models/word_card.dart';
 import '../../data/repositories/stats_repository.dart';
+import '../widgets/animations.dart';
 
 class BattleScreen extends ConsumerStatefulWidget {
   final int sessionCount;
@@ -21,6 +22,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   int? _activeCardIndex;
   List<String>? _options;
   bool? _lastCorrect;
+  bool _shakeEnemy = false;
+  bool _shakePlayer = false;
+  bool _screenShake = false;
 
   @override
   void initState() {
@@ -46,30 +50,54 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   }
 
   Future<void> _answer(String chosen) async {
-  final result = _battleService.answer(_session!, _activeCardIndex!, chosen);
-  final correct = result.$1;
-  final modifiedCard = result.$2;
+    final result = _battleService.answer(_session!, _activeCardIndex!, chosen);
+    final correct = result.$1;
+    final modifiedCard = result.$2;
 
-  final repo = ref.read(wordRepositoryProvider);
-  if (modifiedCard?.id != null) {
-    await repo.updateWord(modifiedCard!);
+    final repo = ref.read(wordRepositoryProvider);
+    if (modifiedCard?.id != null) {
+      await repo.updateWord(modifiedCard!);
+    }
+
+    // Анімація при правильній відповіді — тряска ворога
+    if (correct) {
+      setState(() => _shakeEnemy = true);
+    } else {
+      // При неправильній — тряска гравця і екрану
+      setState(() {
+        _shakePlayer = true;
+        _screenShake = true;
+      });
+    }
+
+    setState(() {
+      _lastCorrect = correct;
+      _activeCardIndex = null;
+      _options = null;
+    });
+
+    // Скидання анімацій
+    await Future.delayed(const Duration(milliseconds: 400));
+    setState(() {
+      _shakeEnemy = false;
+      _shakePlayer = false;
+      _screenShake = false;
+    });
+
+    // Якщо бій закінчився — зберігаємо статистику
+    if (_session!.isFinished) {
+      await StatsRepository().recordBattle(
+        won: _session!.isEnemyDead,
+        correct: _session!.correctAnswers,
+        wrong: _session!.wrongAnswers,
+      );
+    }
+
+    // Примусово оновлюємо UI після можливої зміни на боса
+    if (_session!.isBossFight && _session!.boss != null) {
+      setState(() {});
+    }
   }
-
-  setState(() {
-    _lastCorrect = correct;
-    _activeCardIndex = null;
-    _options = null;
-  });
-
-  // Якщо бій закінчився — зберігаємо статистику
-  if (_session!.isFinished) {
-    await StatsRepository().recordBattle(
-      won: _session!.isEnemyDead,
-      correct: _session!.correctAnswers,
-      wrong: _session!.wrongAnswers,
-    );
-  }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -84,20 +112,23 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF0F0A06),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Ворог зверху
-            _buildEnemy(),
-            // Картки або варіанти
-            Expanded(
-              child: _activeCardIndex != null && _options != null
-                  ? _buildAnswerOptions()
-                  : _buildHand(),
-            ),
-            // HP гравця знизу
-            _buildPlayerHp(),
-            const SizedBox(height: 16),
-          ],
+        child: ScreenShake(
+          shake: _screenShake,
+          child: Column(
+            children: [
+              // Ворог зверху
+              _buildEnemy(),
+              // Картки або варіанти
+              Expanded(
+                child: _activeCardIndex != null && _options != null
+                    ? _buildAnswerOptions()
+                    : _buildHand(),
+              ),
+              // HP гравця знизу
+              _buildPlayerHp(),
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
       ),
     );
@@ -105,38 +136,64 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
 
   Widget _buildPlayerHp() {
     final hp = _session!.playerHp.clamp(0, 100);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.favorite, color: Colors.redAccent, size: 24),
-            const SizedBox(width: 12),
-            SizedBox(
-              width: 300,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: LinearProgressIndicator(
-                  value: hp / 100,
-                  backgroundColor: Colors.white12,
-                  color: Colors.redAccent,
-                  minHeight: 18,
+    return PlayerDamageShake(
+      shake: _shakePlayer,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.favorite, color: Colors.redAccent, size: 24),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 300,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: hp / 100,
+                    backgroundColor: Colors.white12,
+                    color: Colors.redAccent,
+                    minHeight: 18,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Text('$hp / 100',
-                style: GoogleFonts.pressStart2p(fontSize: 10, color: Colors.white54)),
-          ],
+              const SizedBox(width: 12),
+              Text('$hp / 100',
+                  style: GoogleFonts.pressStart2p(fontSize: 10, color: Colors.white54)),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildEnemy() {
-    final enemy = _session!.enemy;
-    final hpPercent = enemy.hp / enemy.maxHp;
+    final session = _session!;
+    final isBoss = session.isBossFight;
+    final enemy = session.currentEnemy;
+    
+    // Отримуємо параметри ворога/боса
+    final int floor;
+    final int hp;
+    final int maxHp;
+    final int attackDamage;
+    
+    if (isBoss && enemy is Boss) {
+      floor = enemy.floor;
+      hp = enemy.hp;
+      maxHp = enemy.maxHp;
+      attackDamage = enemy.attackDamage;
+    } else if (!isBoss && enemy is Enemy) {
+      floor = enemy.floor;
+      hp = enemy.hp;
+      maxHp = enemy.maxHp;
+      attackDamage = enemy.attackDamage;
+    } else {
+      return const SizedBox.shrink(); // Немає ворога
+    }
+    
+    final hpPercent = hp / maxHp;
 
     final monsterImages = [
       'assets/images/monsters/Slime.png',
@@ -148,35 +205,56 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     final monsterNames = [
       'Слайм', 'Нежить', 'Темний лицар', 'Одержимий', 'Маг',
     ];
+    // Якщо бос — додаємо префікс "БОС - "
+    final monsterName = isBoss ? '🔥 БОС - ${monsterNames[floor - 1]} 🔥' : monsterNames[floor - 1];
 
-    final imagePath = monsterImages[enemy.floor - 1];
-    final monsterName = monsterNames[enemy.floor - 1];
+    final imagePath = monsterImages[floor - 1];
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 4),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Монстр — збільшений в 3 рази
-          Image.asset(
-            imagePath,
-            height: 400,
-            filterQuality: FilterQuality.none,
+          // Монстр — збільшений в 3 рази з анімацією тряски
+          EnemyShake(
+            shake: _shakeEnemy,
+            child: Image.asset(
+              imagePath,
+              height: isBoss ? 450 : 400, // Бос трохи більший
+              filterQuality: FilterQuality.none,
+            ),
           ),
           const SizedBox(height: 10),
           // Ім'я
           Text(
             monsterName,
             style: GoogleFonts.pressStart2p(
-              color: Color(0xFFD4A853),
-              fontSize: 16,
+              color: isBoss ? Colors.redAccent : Color(0xFFD4A853),
+              fontSize: isBoss ? 14 : 16,
             ),
           ),
           const SizedBox(height: 6),
           Text(
-            'Атака: ${enemy.attackDamage} dmg  •  HP: ${enemy.hp}/${enemy.maxHp}',
+            'Атака: $attackDamage dmg  •  HP: $hp/$maxHp',
             style: GoogleFonts.pressStart2p(color: Colors.white54, fontSize: 9),
           ),
+          // Якщо бос — показуємо його механіку
+          if (isBoss && enemy is Boss) ...[  
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.redAccent.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: Colors.redAccent.withValues(alpha: 0.5)),
+              ),
+              child: Text(
+                enemy.mechanicDescription,
+                style: GoogleFonts.pressStart2p(color: Colors.redAccent, fontSize: 7),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
           const SizedBox(height: 8),
           // HP бар — збільшений
           Center(
@@ -244,7 +322,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                 final card = _session!.hand[i];
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 6),
-                  child: _HandCard(card: card, onTap: () => _selectCard(i)),
+                  child: SlideInCard(
+                    index: i,
+                    child: _HandCard(card: card, onTap: () => _selectCard(i)),
+                  ),
                 );
               }),
             ),
@@ -276,17 +357,16 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           const SizedBox(height: 12),
           ...(_options!.map((opt) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
-                child: SizedBox(
-                  width: 220,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2A1F0E),
-                      minimumSize: const Size(double.infinity, 44),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                      side: const BorderSide(color: Color(0xFF5C4A2A), width: 2),
+                child: PressableButton(
+                  onPressed: () => _answer(opt),
+                  child: Container(
+                    width: 220,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2A1F0E),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFF5C4A2A), width: 2),
                     ),
-                    onPressed: () => _answer(opt),
                     child: Text(opt,
                         style: GoogleFonts.pressStart2p(fontSize: 10, color: Colors.white),
                         textAlign: TextAlign.center),

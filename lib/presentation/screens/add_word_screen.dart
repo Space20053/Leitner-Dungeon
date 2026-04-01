@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../data/models/word_card.dart';
 import '../providers/word_provider.dart';
+import '../widgets/animations.dart';
 
 // ── Спільні стилі ────────────────────────────────────────────────────────────
 const _bg       = Color(0xFF0D0905);
@@ -204,13 +205,14 @@ class _SaveButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onPressed,
-      child: Container(
+    return PressableButton(
+      onPressed: saving ? null : onPressed,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: _gold,
+          color: saving ? _muted : _gold,
           border: Border.all(color: _goldDark, width: 3),
           boxShadow: saving ? null : const [BoxShadow(color: Color(0xFF3D2A10), offset: Offset(4, 4))],
         ),
@@ -238,35 +240,39 @@ class _WordList extends ConsumerWidget {
       itemBuilder: (context, i) {
         final w = words[i];
         final color = _colors[w.box - 1];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: _bgPanel,
-            border: Border.all(color: color.withValues(alpha: 0.5), width: 2),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(w.word, style: _pixel(8, color)),
-                    Text(w.translation, style: _pixel(6, _muted)),
-                  ],
+        return SlideInCard(
+          index: i,
+          beginOffset: const Offset(-0.3, 0),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: _bgPanel,
+              border: Border.all(color: color.withValues(alpha: 0.5), width: 2),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(w.word, style: _pixel(8, color)),
+                      Text(w.translation, style: _pixel(6, _muted)),
+                    ],
+                  ),
                 ),
-              ),
-              Text('П${w.box}', style: _pixel(7, _gold)),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: () async {
-                  final repo = ref.read(wordRepositoryProvider);
-                  await repo.deleteWord(w.id!);
-                  ref.invalidate(wordListProvider);
-                },
-                child: Icon(Icons.delete_outline, color: Colors.redAccent, size: 24),
-              ),
-            ],
+                Text('П${w.box}', style: _pixel(7, _gold)),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () async {
+                    final repo = ref.read(wordRepositoryProvider);
+                    await repo.deleteWord(w.id!);
+                    ref.invalidate(wordListProvider);
+                  },
+                  child: Icon(Icons.delete_outline, color: Colors.redAccent, size: 24),
+                ),
+              ],
+            ),
           ),
         );
       },
