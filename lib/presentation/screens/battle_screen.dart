@@ -53,6 +53,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     final result = _battleService.answer(_session!, _activeCardIndex!, chosen);
     final correct = result.$1;
     final modifiedCard = result.$2;
+    final bool isCrit = result.$3;
 
     final repo = ref.read(wordRepositoryProvider);
     if (modifiedCard?.id != null) {
@@ -61,6 +62,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
 
     // Анімація при правильній відповіді — тряска ворога
     if (correct) {
+      if (isCrit) {
+        // Показ індикатора криту
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('⚡ КРИТИЧНИЙ УДАР! ⚡', textAlign: TextAlign.center), duration: Duration(milliseconds: 500), backgroundColor: Colors.amber),
+        );
+      }
       setState(() => _shakeEnemy = true);
     } else {
       // При неправильній — тряска гравця і екрану
@@ -75,6 +82,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       _activeCardIndex = null;
       _options = null;
     });
+
+    // Примусово оновлюємо UI для відображення нового шансу криту
+    setState(() {});
 
     // Скидання анімацій
     await Future.delayed(const Duration(milliseconds: 400));
@@ -93,10 +103,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       );
     }
 
-    // Примусово оновлюємо UI після можливої зміни на боса
-    if (_session!.isBossFight && _session!.boss != null) {
-      setState(() {});
-    }
+    // Оновлюємо UI (крит і стан боса)
+    setState(() {});
   }
 
   @override
@@ -141,26 +149,38 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       child: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+          child: Column(
             children: [
-              const Icon(Icons.favorite, color: Colors.redAccent, size: 24),
-              const SizedBox(width: 12),
-              SizedBox(
-                width: 300,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: LinearProgressIndicator(
-                    value: hp / 100,
-                    backgroundColor: Colors.white12,
-                    color: Colors.redAccent,
-                    minHeight: 18,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.favorite, color: Colors.redAccent, size: 24),
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    width: 250,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: LinearProgressIndicator(
+                        value: hp / 100,
+                        backgroundColor: Colors.white12,
+                        color: Colors.redAccent,
+                        minHeight: 18,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-              const SizedBox(width: 12),
-              Text('$hp / 100',
-                  style: GoogleFonts.pressStart2p(fontSize: 10, color: Colors.white54)),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('$hp / 100',
+                      style: GoogleFonts.pressStart2p(fontSize: 10, color: Colors.white54)),
+                  const SizedBox(width: 16),
+                  Text('Crit: ${(_session!.critChance * 100).toInt()}%',
+                      style: GoogleFonts.pressStart2p(fontSize: 10, color: Colors.amberAccent)),
+                ],
+              ),
             ],
           ),
         ),

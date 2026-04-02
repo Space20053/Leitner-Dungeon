@@ -1,3 +1,4 @@
+import 'dart:math';
 import '../../data/models/word_card.dart';
 import 'leitner_service.dart';
 
@@ -68,7 +69,7 @@ class Boss {
       case BossType.possessed:
         // Може випадково пошкодити переклад картки
         if (turnsCount % 2 == 0 && session.hand.isNotEmpty) {
-          final randomIndex = turnsCount % session.hand.length;
+          final randomIndex = Random().nextInt(session.hand.length);
           final card = session.hand[randomIndex];
           // Зберігаємо оригінальний переклад
           corruptedTranslation = card.translation;
@@ -77,7 +78,7 @@ class Boss {
       case BossType.mage:
         // Може заморозити картку
         if (turnsCount % 4 == 0 && session.hand.isNotEmpty) {
-          frozenCardIndex = turnsCount % session.hand.length;
+          frozenCardIndex = Random().nextInt(session.hand.length);
         }
         break;
       default:
@@ -86,11 +87,24 @@ class Boss {
   }
 
   // Застосувати шкоду від гравця
-  int calculatePlayerDamage(int baseDamage) {
-    if (type == BossType.darkKnight && shieldActive) {
-      return (baseDamage * 0.5).round(); // 50% зменшення
+  int calculatePlayerDamage(int baseDamage, WordCard card, BattleSession session) {
+    // Розрахунок критичного удару
+    final bool isCrit = (Random().nextDouble() < session.critChance);
+    int finalDamage = baseDamage;
+
+    if (isCrit) {
+      finalDamage = (baseDamage * 2).round(); // Подвійна шкода
+      session.critChance = 0.05; // Скидання до бази
+    } else {
+      // Підвищення шансу на наступний раз (box * 4%)
+      session.critChance += (card.box * 0.04);
+      if (session.critChance > 1.0) session.critChance = 1.0;
     }
-    return baseDamage;
+
+    if (type == BossType.darkKnight && shieldActive) {
+      return (finalDamage * 0.5).round(); // 50% зменшення
+    }
+    return finalDamage;
   }
 
   // Застосувати механіку після неправильної відповіді гравця
@@ -142,6 +156,9 @@ class BattleSession {
   int deckIndex = 0;
   int correctAnswers = 0;
   int wrongAnswers = 0;
+  
+  // Додаємо шанс критичного удару: 5% база + (box * 4%)
+  double critChance = 0.05;
 
   // Конструктор для звичайного бою
   BattleSession.normal({required this.deck, required this.normalEnemy, required this.boss})
@@ -287,12 +304,13 @@ class BattleService {
   }
 
   // Гравець відповів на картку з руки
-  // Повертає (чи правильно, картка для збереження)
-  (bool, WordCard?) answer(BattleSession session, int handIndex, String chosen) {
+  // Повертає (чи правильно, картка для збереження, чи був крит)
+  (bool, WordCard?, bool) answer(BattleSession session, int handIndex, String chosen) {
     final card = session.hand[handIndex];
     final correct = chosen == card.translation;
 
     WordCard? cardToSave;
+    bool isCrit = false;
 
     if (correct) {
       session.correctAnswers++;
@@ -303,10 +321,26 @@ class BattleService {
       if (session.isBossFight && session.boss != null) {
         // Викликаємо beforePlayerTurn для оновлення стану боса
         session.boss!.beforePlayerTurn(session);
-        damage = session.boss!.calculatePlayerDamage(baseDamage);
-        session.boss!.hp -= damage;
+        final boss = session.boss!;
+        final previousCritChance = session.critChance;
+        damage = boss.calculatePlayerDamage(baseDamage, card, session);
+        isCrit = session.critChance == 0.05 && previousCritChance > 0.05;
+        boss.hp -= damage;
       } else if (!session.isBossFight && session.normalEnemy != null) {
         final Enemy enemy = session.normalEnemy!;
+        
+        // Додаємо механіку криту і для звичайних ворогів
+        final bool rollCrit = (Random().nextDouble() < session.critChance);
+        if (rollCrit) {
+          damage = (baseDamage * 2).round();
+          isCrit = true;
+          session.critChance = 0.05;
+        } else {
+          damage = baseDamage;
+          session.critChance += (card.box * 0.04);
+          if (session.critChance > 1.0) session.critChance = 1.0;
+        }
+        
         enemy.hp -= damage;
       }
       
@@ -332,6 +366,6 @@ class BattleService {
     }
 
     session.replaceCard(handIndex);
-    return (correct, cardToSave);
+    return (correct, cardToSave, isCrit);
   }
 }
