@@ -123,7 +123,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         child: ScreenShake(
           shake: _screenShake,
           child: Column(
-            children: [
+            children:[
               // Ворог зверху
               _buildEnemy(),
               // Картки або варіанти
@@ -150,10 +150,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 16),
           child: Column(
-            children: [
+            children:[
               Row(
                 mainAxisSize: MainAxisSize.min,
-                children: [
+                children:[
                   const Icon(Icons.favorite, color: Colors.redAccent, size: 24),
                   const SizedBox(width: 12),
                   SizedBox(
@@ -173,7 +173,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+                children:[
                   Text('$hp / 100',
                       style: GoogleFonts.pressStart2p(fontSize: 10, color: Colors.white54)),
                   const SizedBox(width: 16),
@@ -215,14 +215,14 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     
     final hpPercent = hp / maxHp;
 
-    final monsterImages = [
+    final monsterImages =[
       'assets/images/monsters/Slime.png',
       'assets/images/monsters/Undead.png',
       'assets/images/monsters/Dark_knight.png',
       'assets/images/monsters/Possessed.png',
       'assets/images/monsters/Mage.png',
     ];
-    final monsterNames = [
+    final monsterNames =[
       'Слайм', 'Нежить', 'Темний лицар', 'Одержимий', 'Маг',
     ];
     // Якщо бос — додаємо префікс "БОС - "
@@ -234,7 +234,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 4),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [
+        children:[
           // Монстр — збільшений в 3 рази з анімацією тряски
           EnemyShake(
             shake: _shakeEnemy,
@@ -249,7 +249,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           Text(
             monsterName,
             style: GoogleFonts.pressStart2p(
-              color: isBoss ? Colors.redAccent : Color(0xFFD4A853),
+              color: isBoss ? Colors.redAccent : const Color(0xFFD4A853),
               fontSize: isBoss ? 14 : 16,
             ),
           ),
@@ -327,7 +327,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       padding: const EdgeInsets.all(12),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [
+        children:[
           Text(
             'Обери картку',
             style: GoogleFonts.pressStart2p(color: Colors.white54, fontSize: 10),
@@ -362,33 +362,33 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       padding: const EdgeInsets.all(16),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [
+        children:[
           Text(
-            '"${card.word}" — що це?',
-            style: GoogleFonts.pressStart2p(color: Color(0xFFD4A853), fontSize: 12),
+            '"Назви що для тебе значить ${card.word}, незнайомцю."',
+            style: GoogleFonts.pressStart2p(color: const Color(0xFFD4A853), fontSize: 16), // Збільшено до 16
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text(
             'атака: $damage dmg',
-            style: GoogleFonts.pressStart2p(color: Colors.white54, fontSize: 9),
+            style: GoogleFonts.pressStart2p(color: Colors.white54, fontSize: 12), // Збільшено до 12
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 24),
           ...(_options!.map((opt) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
+                padding: const EdgeInsets.symmetric(vertical: 8), // Більша відстань між кнопками
                 child: PressableButton(
                   onPressed: () => _answer(opt),
                   child: Container(
-                    width: 220,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    width: 400, // Було 220, стало 400
+                    padding: const EdgeInsets.symmetric(vertical: 20), // Було 12, стало 20
                     decoration: BoxDecoration(
                       color: const Color(0xFF2A1F0E),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFF5C4A2A), width: 2),
+                      border: Border.all(color: const Color(0xFF5C4A2A), width: 3), // Трохи товстіша рамка
                     ),
                     child: Text(opt,
-                        style: GoogleFonts.pressStart2p(fontSize: 10, color: Colors.white),
+                        style: GoogleFonts.pressStart2p(fontSize: 14, color: Colors.white), // Збільшено шрифт до 14
                         textAlign: TextAlign.center),
                   ),
                 ),
@@ -398,86 +398,86 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     );
   }
 
-Widget _buildResultScreen() {
-  final won = _session!.isEnemyDead;
-  final correct = _session!.correctAnswers;
-  final wrong = _session!.wrongAnswers;
-  final total = correct + wrong;
-  final accuracy = total == 0 ? 0 : (correct / total * 100).round();
+  Widget _buildResultScreen() {
+    final won = _session!.isEnemyDead;
+    final correct = _session!.correctAnswers;
+    final wrong = _session!.wrongAnswers;
+    final total = correct + wrong;
+    final accuracy = total == 0 ? 0 : (correct / total * 100).round();
 
-  return Scaffold(
-    backgroundColor: const Color(0xFF0F0A06),
-    body: Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520),
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                won ? '⚔ Перемога!' : '💀 Поразка!',
-                style: GoogleFonts.pressStart2p(
-                    fontSize: 24,
-                    color: won ? Colors.greenAccent : Colors.redAccent),
-              ),
-              const SizedBox(height: 32),
-              // Статистика бою
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1A1209),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                      color: const Color(0xFFD4A853).withValues(alpha: 0.3)),
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F0A06),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children:[
+                Text(
+                  won ? '⚔ Перемога!' : '💀 Поразка!',
+                  style: GoogleFonts.pressStart2p(
+                      fontSize: 24,
+                      color: won ? Colors.greenAccent : Colors.redAccent),
                 ),
-                child: Column(
-                  children: [
-                    Text('Результати бою',
-                        style: GoogleFonts.pressStart2p(
-                            color: Color(0xFFD4A853), fontSize: 12)),
-                    const SizedBox(height: 20),
-                    _statRow('Правильних', '$correct', Colors.greenAccent),
-                    const SizedBox(height: 12),
-                    _statRow('Неправильних', '$wrong', Colors.redAccent),
-                    const SizedBox(height: 12),
-                    _statRow('Точність', '$accuracy%', const Color(0xFFD4A853)),
-                  ],
+                const SizedBox(height: 32),
+                // Статистика бою
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1209),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: const Color(0xFFD4A853).withValues(alpha: 0.3)),
+                  ),
+                  child: Column(
+                    children:[
+                      Text('Результати бою',
+                          style: GoogleFonts.pressStart2p(
+                              color: const Color(0xFFD4A853), fontSize: 12)),
+                      const SizedBox(height: 20),
+                      _statRow('Правильних', '$correct', Colors.greenAccent),
+                      const SizedBox(height: 12),
+                      _statRow('Неправильних', '$wrong', Colors.redAccent),
+                      const SizedBox(height: 12),
+                      _statRow('Точність', '$accuracy%', const Color(0xFFD4A853)),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFD4A853),
-                  minimumSize: const Size(double.infinity, 56),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFD4A853),
+                    minimumSize: const Size(double.infinity, 56),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () {
+                    ref.invalidate(wordListProvider);
+                    ref.invalidate(statsProvider);
+                    context.go('/');
+                  },
+                  child: Text('Повернутись',
+                      style: GoogleFonts.pressStart2p(fontSize: 12, color: Colors.black)),
                 ),
-                onPressed: () {
-                  ref.invalidate(wordListProvider);
-                  ref.invalidate(statsProvider);
-                  context.go('/');
-                },
-                child: Text('Повернутись',
-                    style: GoogleFonts.pressStart2p(fontSize: 12, color: Colors.black)),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
-Widget _statRow(String label, String value, Color color) {
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      Text(label, style: GoogleFonts.pressStart2p(color: Colors.white54, fontSize: 10)),
-      Text(value, style: GoogleFonts.pressStart2p(color: color, fontSize: 12)),
-    ],
-  );
+  Widget _statRow(String label, String value, Color color) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children:[
+        Text(label, style: GoogleFonts.pressStart2p(color: Colors.white54, fontSize: 10)),
+        Text(value, style: GoogleFonts.pressStart2p(color: color, fontSize: 12)),
+      ],
+    );
   }
 }
 
@@ -494,7 +494,7 @@ class _HandCard extends StatefulWidget {
 class _HandCardState extends State<_HandCard> {
   bool _pressed = false;
 
-  static const _colors = [
+  static const _colors =[
     Color(0xFF9E9E9E), // 1 — Звичайна
     Color(0xFF4CAF50), // 2 — Незвична
     Color(0xFF2196F3), // 3 — Рідкісна
@@ -502,7 +502,7 @@ class _HandCardState extends State<_HandCard> {
     Color(0xFFFFD700), // 5 — Легендарна
   ];
 
-  static const _rarityLabel = [
+  static const _rarityLabel =[
     'ЗВИЧАЙНА',
     'НЕЗВИЧНА',
     'РІДКІСНА',
@@ -510,8 +510,9 @@ class _HandCardState extends State<_HandCard> {
     'ЛЕГЕНДАРНА',
   ];
 
-  static const _rarityRoman = ['I', 'II', 'III', 'IV', 'V'];
+  static const _rarityRoman =['I', 'II', 'III', 'IV', 'V'];
 
+  // ОНОВЛЕНИЙ ВАРІАНТ (Збільшена картка)
   @override
   Widget build(BuildContext context) {
     final color  = _colors[widget.card.box - 1];
@@ -526,71 +527,74 @@ class _HandCardState extends State<_HandCard> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 80),
         transform: _pressed
-            ? Matrix4.translationValues(2, 2, 0)
+            ? Matrix4.translationValues(4, 4, 0) // Трохи більший зсув при натисканні
             : Matrix4.identity(),
-        // Прямокутна картка
-        width: 160,
-        height: 200,
-        margin: const EdgeInsets.symmetric(horizontal: 4),
+        
+        // --- НОВІ РОЗМІРИ КАРТКИ ---
+        width: 220, // Було 160
+        height: 300, // Було 200
+        margin: const EdgeInsets.symmetric(horizontal: 8), // Трохи більший відступ між картками
         decoration: BoxDecoration(
           color: const Color(0xFF130C05),
-          // Зовнішня рамка — колір рідкісності
-          border: Border.all(color: color, width: 3),
+          border: Border.all(color: color, width: 4), // Товстіша рамка
           boxShadow: _pressed
               ? []
-              : [
+              :[
                   BoxShadow(
                     color: color.withValues(alpha: 0.35),
-                    offset: const Offset(3, 3),
+                    offset: const Offset(4, 4),
                   ),
                 ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
+          children:[
             // ── Шапка: рівень + знак рідкісності ──────────────────
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.15),
                 border: Border(bottom: BorderSide(color: color, width: 2)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
+                children:[
                   Text(
                     roman,
                     style: GoogleFonts.pressStart2p(
-                        fontSize: 12, color: color),
+                        fontSize: 16, color: color), // Збільшено до 16
                   ),
-                  // Піксельний ромб — маркер рідкісності
                   _RarityGem(color: color, box: widget.card.box),
                 ],
               ),
             ),
 
             // ── Слово ─────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(6, 8, 6, 4),
-              child: Text(
-                widget.card.word,
-                style: GoogleFonts.pressStart2p(
-                  fontSize: 10,
-                  color: color,
-                  height: 1.4,
+            Expanded(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
+                  child: Text(
+                    widget.card.word,
+                    style: GoogleFonts.pressStart2p(
+                      fontSize: 14, // Збільшено до 14
+                      color: color,
+                      height: 1.4,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 3, // Дозволимо 3 рядки на випадок довгих слів
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
 
             // ── Роздільник ────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Row(
-                children: [
+                children:[
                   Expanded(
                     child: Container(
                       height: 2,
@@ -598,9 +602,9 @@ class _HandCardState extends State<_HandCard> {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 3),
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
                     child: Text('✦',
-                        style: TextStyle(color: color, fontSize: 10)),
+                        style: TextStyle(color: color, fontSize: 14)),
                   ),
                   Expanded(
                     child: Container(
@@ -612,25 +616,25 @@ class _HandCardState extends State<_HandCard> {
               ),
             ),
 
-            const SizedBox(height: 6),
+            const SizedBox(height: 12),
 
             // ── Dmg ───────────────────────────────────────────────
             Text(
               '⚔ $damage',
-              style: GoogleFonts.pressStart2p(fontSize: 12, color: color),
+              style: GoogleFonts.pressStart2p(fontSize: 18, color: color), // Збільшено до 18
             ),
-            const SizedBox(height: 3),
+            const SizedBox(height: 6),
             Text(
               'DMG',
               style: GoogleFonts.pressStart2p(
-                  fontSize: 8, color: color.withValues(alpha: 0.5)),
+                  fontSize: 10, color: color.withValues(alpha: 0.5)), // Збільшено до 10
             ),
+            const SizedBox(height: 12),
 
             // ── Підвал: рідкісність ───────────────────────────────
-            const SizedBox(height: 6),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 4),
+              padding: const EdgeInsets.symmetric(vertical: 8),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.12),
                 border: Border(top: BorderSide(color: color, width: 2)),
@@ -638,7 +642,7 @@ class _HandCardState extends State<_HandCard> {
               child: Text(
                 rarity,
                 style: GoogleFonts.pressStart2p(
-                    fontSize: 6,
+                    fontSize: 8, // Збільшено до 8
                     color: color.withValues(alpha: 0.7)),
                 textAlign: TextAlign.center,
               ),
@@ -650,7 +654,7 @@ class _HandCardState extends State<_HandCard> {
   }
 }
 
-// ── Піксельний ромб-маркер рідкісності ──────────────────────────────────────
+// ── Піксельний ромб-маркер рідкісності (ОНОВЛЕНИЙ РОЗМІР) ──────────────────────────────────────
 class _RarityGem extends StatelessWidget {
   final Color color;
   final int box;
@@ -663,13 +667,13 @@ class _RarityGem extends StatelessWidget {
       children: List.generate(
         box,
         (i) => Container(
-          width: 8,
-          height: 8,
-          margin: const EdgeInsets.only(left: 2),
+          width: 12, // Збільшено до 12
+          height: 12, // Збільшено до 12
+          margin: const EdgeInsets.only(left: 4),
           decoration: BoxDecoration(
             color: i < box ? color : Colors.transparent,
             border: Border.all(
-                color: color.withValues(alpha: 0.5), width: 0.5),
+                color: color.withValues(alpha: 0.5), width: 1.5),
           ),
         ),
       ),

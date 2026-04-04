@@ -33,15 +33,15 @@ class Boss {
   String get mechanicDescription {
     switch (type) {
       case BossType.slime:
-        return 'Дуелюється! Кожні 3 ходи посилюється.';
+        return 'Слайм: Дуелюється! Кожні 3 ходи його атака подвоюється. Поспішайте подолати його!';
       case BossType.undead:
-        return 'Краде життя при промахах!';
+        return 'Нежить: Викрадач життя! Кожна ваша помилка не лише завдає вам шкоди, а й лікує монстра.';
       case BossType.darkKnight:
-        return shieldActive ? '🛡️ Щит активний!' : 'Готовий до бою';
+        return 'Темний лицар: Майстер захисту! Кожні 3 ходи піднімає щит, який поглинає 50% вашої шкоди.';
       case BossType.possessed:
-        return corruptedTranslation != null ? '🔮 Слово заморожене!' : 'Спостерігає...';
+        return 'Одержимий: Маніпулятор розумом! Кожні 2 ходи він може змінити переклад вашої карти.';
       case BossType.mage:
-        return frozenCardIndex >= 0 ? '❄️ Картка заморожена!' : 'Готує закляття...';
+        return 'Маг: Повелитель льоду! Кожні 4 ходи заморожує одну з ваших карт, роблячи її недоступною.';
       case BossType.none:
         return '';
     }
@@ -239,17 +239,23 @@ class BattleService {
       return countB.compareTo(countA);
     });
     
-    // Будуємо зважений список: +5% для max, базово 20%
+    // Будуємо зважений список тільки з тих поверхів, де є слова
     final weighted = <int>[];
     
     for (int f in floors) {
       final count = counts[f - 1];
-      if (count == maxCount && maxCount > 0) {
-        // +5% бонус = додаємо ще один раз
+      if (count > 0) {
+        // Додаємо поверх у список
         weighted.add(f);
+        // Якщо це домінантний поверх (найбільше слів), даємо йому подвійний шанс
+        if (count == maxCount) {
+          weighted.add(f);
+        }
       }
-      weighted.add(f);
     }
+    
+    // Якщо раптом слів немає взагалі (не має трапитись), повертаємо 1 поверх
+    if (weighted.isEmpty) return 1;
     
     weighted.shuffle();
     return weighted.first;
@@ -266,8 +272,11 @@ class BattleService {
       return BattleSession.boss(deck: deck, boss: boss);
     }
     
-    // Якщо обраний поверх порожній — бос
-    if (isFloorEmpty(allCards, floor)) {
+    // Маленький шанс (15%) зустріти боса замість звичайного ворога
+    final bool isRandomBoss = Random().nextDouble() < 0.15;
+    
+    // Якщо обраний поверх порожній або випав рандомний шанс — бос
+    if (isFloorEmpty(allCards, floor) || isRandomBoss) {
       final boss = createBoss(floor);
       final deck = List<WordCard>.from(allCards)..shuffle();
       return BattleSession.boss(deck: deck, boss: boss);
@@ -275,9 +284,8 @@ class BattleService {
     
     // Звичайний ворог
     final enemy = Enemy(floor: floor);
-    final boss = createBoss(floor);
     final deck = List<WordCard>.from(allCards)..shuffle();
-    return BattleSession.normal(deck: deck, normalEnemy: enemy, boss: boss);
+    return BattleSession.normal(deck: deck, normalEnemy: enemy, boss: null);
   }
 
   // Створити боса для поверху

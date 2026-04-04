@@ -284,7 +284,7 @@ class _FloorTile extends StatelessWidget {
     Color(0xFFFFD700),
   ];
   static const _labels = [
-    'НОВАЧКИ', 'ЗНАЙОМІ', 'СЕРЕДНІ', 'ДОСВІДЧЕНІ', 'МАЙСТРИ',
+    'ЗВИЧАЙНІ', 'НЕЗВИЧНІ', 'РІДКІСНІ', 'ЕПІЧНІ', 'ЛЕГЕНДАРНІ',
   ];
   static const _icons = ['☁', '🌿', '💧', '✦', '★'];
 
